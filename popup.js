@@ -24,7 +24,7 @@ function switchTab(name) {
 }
 
 function getDisplayName(v) {
-  const { stem, ext } = extractOriginalName(v.url, v.contentType);
+  const { stem, ext } = extractOriginalName(v.url, v.contentType, v.title);
   return `${stem}${ext}`;
 }
 

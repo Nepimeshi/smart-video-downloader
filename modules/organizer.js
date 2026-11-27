@@ -5,8 +5,11 @@ import { detectFormat, getEffectiveResolution } from "./filter.js";
 
 const GENERIC_NAMES = new Set([
   "video", "stream", "play", "index", "media", "watch",
-  "file", "download", "clip", "source", "get", "default", "output"
+  "file", "download", "clip", "source", "get", "default", "output",
+  "remote_control", "get_file", "player", "embed", "serve", "proxy", "view", "fetch"
 ]);
+
+const SCRIPT_ENDPOINT_RE = /\.(php|asp|aspx|jsp|cgi|cfm|do|action)$/i;
 
 function shortHash(str) {
   let hash = 2166136261;
@@ -35,7 +38,7 @@ export function getDateString(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-export function extractOriginalName(url, contentType = null) {
+export function extractOriginalName(url, contentType = null, fallbackTitle = null) {
   const format = detectFormat(url, contentType) || "mp4";
   const ext = `.${format}`;
   try {
@@ -44,17 +47,29 @@ export function extractOriginalName(url, contentType = null) {
     let rawName = segments.length ? decodeURIComponent(segments[segments.length - 1]) : "";
     rawName = sanitizeSegment(rawName, "");
 
+    const isScriptEndpoint = SCRIPT_ENDPOINT_RE.test(rawName);
     const extMatch = rawName.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
     if (extMatch) {
       rawName = rawName.slice(0, -extMatch[0].length);
+    } else if (isScriptEndpoint) {
+      rawName = rawName.replace(SCRIPT_ENDPOINT_RE, "");
     }
 
     let stem = rawName;
-    const isGeneric = !stem || GENERIC_NAMES.has(stem.toLowerCase());
+    const isGeneric = !stem || isScriptEndpoint || GENERIC_NAMES.has(stem.toLowerCase());
     if (isGeneric) {
-      const parent = segments.length >= 2 ? sanitizeSegment(decodeURIComponent(segments[segments.length - 2]), "") : "";
-      const base = stem || "video";
-      stem = parent && !GENERIC_NAMES.has(parent.toLowerCase()) ? `${parent}_${base}` : `${base}_${shortHash(url)}`;
+      const cleanTitle = fallbackTitle
+        ? sanitizeSegment(fallbackTitle.replace(/\s+/g, "_"), "").slice(0, 60)
+        : "";
+      if (cleanTitle && !GENERIC_NAMES.has(cleanTitle.toLowerCase())) {
+        stem = `${cleanTitle}_${shortHash(url)}`;
+      } else {
+        const parent = segments.length >= 2 ? sanitizeSegment(decodeURIComponent(segments[segments.length - 2]), "") : "";
+        const base = stem && !isScriptEndpoint ? stem : "video";
+        stem = parent && !GENERIC_NAMES.has(parent.toLowerCase())
+          ? `${parent}_${base}_${shortHash(url)}`
+          : `${base}_${shortHash(url)}`;
+      }
     } else if (parsed.search) {
       stem = `${stem}_${shortHash(url)}`;
     }
@@ -70,7 +85,7 @@ export function buildDownloadPath(videoMeta, settings, pageHostname = "", date =
   const dateStr = getDateString(date);
   const res = getEffectiveResolution(videoMeta);
   const resLabel = res ? `${res}p` : "unknown";
-  const { stem, ext } = extractOriginalName(videoMeta.url, videoMeta.contentType);
+  const { stem, ext } = extractOriginalName(videoMeta.url, videoMeta.contentType, videoMeta.title);
 
   // Build folder path segments (strictly relative, no path traversal)
   const folderParts = [base];
