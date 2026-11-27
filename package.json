@@ -8,5 +8,5 @@
     "test": "node tests/run-tests.mjs",
     "icons": "node scripts/generate-icons.mjs"
   },
-  "license": "MIT"
+  "license": "UNLICENSED"
 }

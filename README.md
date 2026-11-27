@@ -62,4 +62,4 @@ npm test
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+All Rights Reserved — Personal, Non-Commercial Use Only. Commercial use, resale, or store re-uploads are prohibited. See [LICENSE](LICENSE).
