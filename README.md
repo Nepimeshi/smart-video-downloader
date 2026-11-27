@@ -15,13 +15,26 @@ A Manifest V3 Chrome extension for selectively detecting, filtering, organizing,
 - **Backup & Restore**: Versioned JSON settings export/import and reset-to-defaults.
 - **Notifications & Shortcuts**: Configurable desktop notifications and Chrome keyboard shortcuts.
 
-## Installation (Load Unpacked in Chrome)
+## Installation (Chrome)
 
-1. Download or clone this repository.
-2. Open `chrome://extensions/` in Google Chrome.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select this project folder.
-5. Pin **Smart Video Downloader** to your toolbar.
+Chrome loads unpacked extensions from a **folder** containing `manifest.json` (not a single `.crx` or `.zip` file).
+
+### Step 1: Download the Extension
+1. At the top of this GitHub page, click the green **`<> Code`** button.
+2. Click **Download ZIP**.
+3. Locate the downloaded `smart-video-downloader-main.zip` file on your computer and **extract (unzip)** it to a permanent folder (do not delete this folder after installing, or Chrome will unload the extension).
+
+### Step 2: Load into Chrome
+1. Open Google Chrome and go to `chrome://extensions/`.
+2. In the top-right corner, turn ON **Developer mode**.
+3. In the top-left corner, click **Load unpacked**.
+4. Select the extracted folder that contains `manifest.json` (for example, `smart-video-downloader-main`).
+5. Click the **Extensions** puzzle icon in Chrome's toolbar and pin **Smart Video Downloader** for quick access.
+
+### Step 3: Start Using It
+- Click the **Smart Video Downloader** icon in your toolbar.
+- By default it starts in **Detection Only** mode so it won't download anything unexpectedly.
+- Switch to **Automatic** mode in the top-right dropdown when you want matching videos to download automatically, or open the **Settings** tab to customize resolution, file size, format, and website rules.
 
 ## Default Keyboard Shortcuts
 
