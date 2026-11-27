@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Video Downloader</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <img src="assets/icons/icon-32.png" alt="SVD" class="brand-icon" />
+        <div>
+          <h1>Smart Video Downloader</h1>
+          <span id="siteBadge" class="site-badge">—</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <select id="modeSelect" class="mode-select" title="Operating Mode">
+          <option value="automatic">Automatic</option>
+          <option value="detection_only">Detection Only</option>
+          <option value="disabled">Disabled</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- 6-Tab Navigation -->
+    <nav class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-tab="dashboard">Dashboard</button>
+      <button class="nav-tab" data-tab="videos">Videos <span id="tabBadgeVideos" class="pill">0</span></button>
+      <button class="nav-tab" data-tab="queue">Queue <span id="tabBadgeQueue" class="pill">0</span></button>
+      <button class="nav-tab" data-tab="history">History</button>
+      <button class="nav-tab" data-tab="websites">Websites</button>
+      <button class="nav-tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- 1. DASHBOARD -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="controls-row">
+        <button id="pauseBtn" class="btn-secondary">Pause</button>
+        <button id="scanBtn" class="btn-primary">Scan Tab</button>
+        <button id="quickFiltersBtn" class="btn-secondary">Filters</button>
+      </div>
+
+      <div id="statusBanner" class="status-banner">Detection Only mode</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value" id="statDetected">0</span>
+          <span class="stat-label">Detected</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-cyan" id="statMatching">0</span>
+          <span class="stat-label">Matching</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-blue" id="statActive">0</span>
+          <span class="stat-label">Active DL</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-green" id="statCompleted">0</span>
+          <span class="stat-label">Completed</span>
+        </div>
+      </div>
+
+      <div class="card compact-row">
+        <span class="muted">Total Storage Downloaded</span>
+        <strong id="statStorage">0 B</strong>
+      </div>
+
+      <div class="card compact-row">
+        <span class="muted">Active Filter Summary</span>
+        <span id="filterSummary" class="filter-summary">≥720p · ≥5 MB</span>
+      </div>
+    </section>
+
+    <!-- 2. DETECTED VIDEOS -->
+    <section id="tab-videos" class="tab-panel">
+      <div class="section-bar">
+        <h2>Detected on Current Tab</h2>
+        <button id="rescanBtn2" class="btn-xs">Rescan</button>
+      </div>
+      <ul id="videoList" class="list"></ul>
+      <p id="videosEmpty" class="empty-state">No videos detected on this tab yet.</p>
+    </section>
+
+    <!-- 3. DOWNLOAD QUEUE -->
+    <section id="tab-queue" class="tab-panel">
+      <div class="section-bar">
+        <h2>Download Queue</h2>
+        <button id="clearCompletedBtn" class="btn-xs">Clear Completed</button>
+      </div>
+      <ul id="queueList" class="list"></ul>
+      <p id="queueEmpty" class="empty-state">Download queue is empty.</p>
+    </section>
+
+    <!-- 4. HISTORY -->
+    <section id="tab-history" class="tab-panel">
+      <div class="section-bar">
+        <input type="text" id="historySearch" class="search-input" placeholder="Search filename or website..." />
+        <button id="clearHistoryBtn" class="btn-xs btn-danger-outline">Clear</button>
+      </div>
+      <div class="stats-mini" id="historyStatsBar">0 total · 0 B</div>
+      <ul id="historyList" class="list"></ul>
+      <p id="historyEmpty" class="empty-state">No download history yet.</p>
+    </section>
+
+    <!-- 5. WEBSITES -->
+    <section id="tab-websites" class="tab-panel">
+      <div class="card">
+        <div class="compact-row">
+          <span>Current Site: <strong id="currentSiteLabel">—</strong></span>
+          <button id="pauseSiteBtn" class="btn-xs">Pause Site</button>
+        </div>
+      </div>
+
+      <div class="card form-col">
+        <label class="field">
+          <span>Global Website Rule Mode</span>
+          <select id="siteMode">
+            <option value="all">Allow on all websites</option>
+            <option value="allowlist">Allow only on selected websites</option>
+            <option value="blocklist">Block on selected websites</option>
+          </select>
+        </label>
+        <div id="siteListBox" class="form-col hidden">
+          <div class="compact-row">
+            <span id="siteListLabel" class="muted">Domains (one per line)</span>
+            <button id="addCurrentToListBtn" class="btn-link" type="button">+ Add current</button>
+          </div>
+          <textarea id="siteListInput" rows="2" placeholder="example.com"></textarea>
+        </div>
+      </div>
+
+      <div class="card form-col">
+        <h2>Per-Website Profile</h2>
+        <div class="field-row">
+          <input type="text" id="profileHost" placeholder="domain.com" />
+          <select id="profileRes">
+            <option value="">Default Res</option>
+            <option value="0">Any</option>
+            <option value="480">480p</option>
+            <option value="720">720p</option>
+            <option value="1080">1080p</option>
+            <option value="2160">2160p</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <input type="number" id="profileMinSize" placeholder="Min MB (default)" min="0" />
+          <label class="check-inline"><input type="checkbox" id="profileEnabled" checked /> Auto-DL</label>
+        </div>
+        <button id="saveProfileBtn" class="btn-primary btn-sm">Save Site Profile</button>
+        <ul id="profilesList" class="list compact-list"></ul>
+      </div>
+    </section>
+
+    <!-- 6. SETTINGS -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="settings-scroll">
+        <!-- Filters -->
+        <div class="card form-col">
+          <h2>Filters</h2>
+          <label class="field">
+            <span>Minimum Resolution</span>
+            <select id="minResolution">
+              <option value="0">Any</option>
+              <option value="144">144p</option>
+              <option value="240">240p</option>
+              <option value="360">360p</option>
+              <option value="480">480p</option>
+              <option value="720">720p (Default)</option>
+              <option value="1080">1080p</option>
+              <option value="1440">1440p</option>
+              <option value="2160">2160p (4K)</option>
+            </select>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="check-inline"><input type="checkbox" id="minFileSizeEnabled" /> Min Size (MB)</span>
+              <input type="number" id="minFileSizeMB" min="0" step="0.5" />
+            </label>
+            <label class="field">
+              <span class="check-inline"><input type="checkbox" id="maxFileSizeEnabled" /> Max Size (MB)</span>
+              <input type="number" id="maxFileSizeMB" min="0" step="1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="check-inline"><input type="checkbox" id="minDurationEnabled" /> Min Dur (s)</span>
+              <input type="number" id="minDurationSec" min="0" step="1" />
+            </label>
+            <label class="field">
+              <span class="check-inline"><input type="checkbox" id="maxDurationEnabled" /> Max Dur (s)</span>
+              <input type="number" id="maxDurationSec" min="0" step="1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Min FPS</span>
+              <select id="minFps">
+                <option value="0">Any</option>
+                <option value="24">24 FPS</option>
+                <option value="30">30 FPS</option>
+                <option value="50">50 FPS</option>
+                <option value="60">60 FPS</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Codec</span>
+              <select id="codec">
+                <option value="any">Any</option>
+                <option value="h264">H.264 / AVC</option>
+                <option value="h265">H.265 / HEVC</option>
+                <option value="av1">AV1</option>
+                <option value="vp8">VP8</option>
+                <option value="vp9">VP9</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Aspect Ratio</span>
+            <select id="aspectRatio">
+              <option value="any">Any</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="4:3">4:3</option>
+              <option value="1:1">1:1</option>
+            </select>
+          </label>
+
+          <div class="field">
+            <span>Allowed Formats</span>
+            <div class="format-checks">
+              <label class="check-inline"><input type="checkbox" class="fmt-cb" value="mp4" /> MP4</label>
+              <label class="check-inline"><input type="checkbox" class="fmt-cb" value="webm" /> WebM</label>
+              <label class="check-inline"><input type="checkbox" class="fmt-cb" value="mov" /> MOV</label>
+              <label class="check-inline"><input type="checkbox" class="fmt-cb" value="ogg" /> OGG</label>
+              <label class="check-inline"><input type="checkbox" class="fmt-cb" value="m4v" /> M4V</label>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Unknown Res</span>
+              <select id="unkRes"><option value="reject">Reject</option><option value="allow">Allow</option></select>
+            </label>
+            <label class="field">
+              <span>Unknown Size</span>
+              <select id="unkSize"><option value="reject">Reject</option><option value="allow">Allow</option></select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Downloads & File Organization -->
+        <div class="card form-col">
+          <h2>Downloads & Organization</h2>
+          <div class="field-row">
+            <label class="field">
+              <span>Max Simultaneous</span>
+              <select id="maxConcurrentDownloads">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3 (Default)</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Max Retries</span>
+              <input type="number" id="maxRetries" min="0" max="5" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Folder Structure</span>
+            <select id="folderStructure">
+              <option value="flat">Single folder</option>
+              <option value="website">By website</option>
+              <option value="date">By date</option>
+              <option value="website_date">By website and date</option>
+              <option value="custom">Custom template</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Filename Mode</span>
+            <select id="filenameMode">
+              <option value="original">Preserve original filename</option>
+              <option value="site_original">Website + filename</option>
+              <option value="date_original">Date + filename</option>
+              <option value="resolution_original">Filename + resolution</option>
+              <option value="custom">Custom template</option>
+            </select>
+          </label>
+
+          <label class="check-inline">
+            <input type="checkbox" id="pauseOnMeteredConnection" />
+            Pause auto-downloads on metered network
+          </label>
+        </div>
+
+        <!-- Notifications & Floating Panel -->
+        <div class="card form-col">
+          <h2>Notifications & Appearance</h2>
+          <label class="check-inline"><input type="checkbox" id="notifEnabled" /> Enable notifications</label>
+          <label class="check-inline"><input type="checkbox" id="notifComplete" /> Notify on download completed</label>
+          <label class="check-inline"><input type="checkbox" id="notifFail" /> Notify on download failed</label>
+          <label class="check-inline"><input type="checkbox" id="floatingPanelEnabled" /> Show floating detection panel on pages</label>
+        </div>
+
+        <!-- Advanced: Import / Export / Reset -->
+        <div class="card form-col">
+          <h2>Backup & Reset</h2>
+          <div class="controls-row">
+            <button id="exportBtn" class="btn-secondary btn-sm">Export JSON</button>
+            <button id="importBtn" class="btn-secondary btn-sm">Import JSON</button>
+            <button id="resetBtn" class="btn-danger btn-sm">Reset</button>
+          </div>
+          <input type="file" id="importFile" accept=".json,application/json" class="hidden" />
+          <span id="settingsMsg" class="save-msg"></span>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

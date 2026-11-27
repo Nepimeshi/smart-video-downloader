@@ -1,0 +1,12 @@
+{
+  "name": "smart-video-downloader",
+  "version": "3.0.0",
+  "description": "Intelligent Manifest V3 Chrome extension for detecting, filtering, and downloading direct HTML5 videos.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run-tests.mjs",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "license": "MIT"
+}
